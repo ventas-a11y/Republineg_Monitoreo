@@ -42,6 +42,10 @@ return [
     'user-password.update' => ['PUT', $everyone],
     'appearance.edit' => ['GET', $everyone],
 
+    // Política de monitoreo: everyone reads it; only Empleados accept it.
+    'monitoring-policy.show' => ['GET', $everyone],
+    'monitoring-policy.accept' => ['POST', ['guest' => 'login', 'empleado' => 'allowed', 'revisor' => 'not_found', 'administrador' => 'not_found']],
+
     // Only meaningful while a temporary password is pending; otherwise the
     // form redirects to the dashboard and the update answers 404.
     'temporary-password.edit' => ['GET', $everyone],
@@ -58,4 +62,6 @@ return [
     'admin.areas.store' => ['POST', $administradorOnly],
     'admin.areas.edit' => ['GET', $administradorOnly],
     'admin.areas.update' => ['PUT', $administradorOnly],
+    'admin.monitoring-policy.index' => ['GET', $administradorOnly],
+    'admin.monitoring-policy.store' => ['POST', $administradorOnly],
 ];
