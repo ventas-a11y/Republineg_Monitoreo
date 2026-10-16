@@ -25,6 +25,23 @@ test('reset password link can be requested', function () {
     Notification::assertSentTo($user, ResetPassword::class);
 });
 
+test('the reset link request does not reveal whether an email has an account', function () {
+    Notification::fake();
+
+    $user = User::factory()->create();
+
+    $known = $this->from(route('password.request'))
+        ->post(route('password.email'), ['email' => $user->email]);
+    $unknown = $this->from(route('password.request'))
+        ->post(route('password.email'), ['email' => 'nadie@example.com']);
+
+    foreach ([$known, $unknown] as $response) {
+        $response->assertRedirect(route('password.request'))
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status', trans('passwords.sent'));
+    }
+});
+
 test('reset password screen can be rendered', function () {
     Notification::fake();
 
