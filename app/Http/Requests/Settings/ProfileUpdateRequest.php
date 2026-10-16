@@ -13,10 +13,15 @@ class ProfileUpdateRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
+     * Only the name: the email is changed by an Administrador (ticket 02),
+     * so any submitted email is ignored.
+     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        return $this->profileRules($this->user()->id);
+        return [
+            'name' => $this->nameRules(),
+        ];
     }
 }

@@ -38,6 +38,8 @@ class SecurityController extends Controller
                     ->all()
                 : [],
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            // Onboarding: the panel stays closed until a second factor exists.
+            'requiresSecondFactor' => ! $request->user()->hasSecondFactor(),
         ];
 
         if (Features::canManageTwoFactorAuthentication()) {

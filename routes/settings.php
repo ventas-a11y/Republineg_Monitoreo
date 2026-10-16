@@ -6,7 +6,8 @@ use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Routing\RedirectController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth'])->group(function () {
+// Settings stay reachable without a second factor: Security is where it gets configured.
+Route::middleware(['auth', 'password.changed'])->group(function () {
     /**
      * GET-only equivalent of Route::redirect(), which registers every verb including
      * QUERY; Wayfinder 0.1.21 cannot type QUERY routes (fixed in 0.1.22).
@@ -19,9 +20,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
+Route::middleware(['auth', 'password.changed', 'verified'])->group(function () {
     Route::get('settings/security', [SecurityController::class, 'edit'])
         ->middleware(RequirePassword::class)
         ->name('security.edit');
