@@ -1,7 +1,10 @@
+export type Role = 'administrador' | 'revisor' | 'empleado';
+
 export type User = {
-    id: number;
+    id: string;
     name: string;
     email: string;
+    role: Role;
     avatar?: string;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
@@ -12,6 +15,18 @@ export type User = {
 
 export type Auth = {
     user: User;
+    can: {
+        viewMonitoring: boolean;
+        manageAccounts: boolean;
+        manageAreas: boolean;
+    };
+};
+
+export type SessionTimeout = {
+    /** Minutes of inactivity before the session expires. */
+    idleMinutes: number;
+    /** Unix timestamp (seconds) when the login expires regardless of activity. */
+    absoluteExpiresAt: number;
 };
 
 export type Passkey = {

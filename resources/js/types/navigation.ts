@@ -11,4 +11,6 @@ export type NavItem = {
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    /** Sub-items rendered as a collapsible group (e.g. Actividad). */
+    items?: NavItem[];
 };
