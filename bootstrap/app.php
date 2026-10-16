@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnforceAbsoluteSessionTimeout;
+use App\Http\Middleware\EnsureMonitoringPolicyAccepted;
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\EnsureSecondFactor;
 use App\Http\Middleware\HandleAppearance;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'password.changed' => EnsurePasswordIsChanged::class,
+            'consent' => EnsureMonitoringPolicyAccepted::class,
             'second-factor' => EnsureSecondFactor::class,
         ]);
     })
