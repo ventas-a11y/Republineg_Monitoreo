@@ -25,7 +25,7 @@
 - **Aviso:** el menú incluye "Monitoreo transparente", como en el mockup.
 - **Idioma:** la interfaz quedó en español (`lang/es` y pantallas del starter kit).
 - **Tema (2026-10-17):** el usuario eligió el preset de shadcn `b2CjejDL0` (neutros oliva, primario ámbar, fuente Montserrat, radio 10 px).
-  - Se aplicó solo el tema: los componentes siguen en estilo `new-york`, sin dependencias nuevas, y Montserrat se sirve desde el build.
-  - Los colores de estado y de la cinta de jornada se mantienen del mockup, porque el preset no los define.
-  - La interfaz se compactó: la escala base pasó al 93,75 % (15 px).
-  - El mockup sigue siendo la referencia de estructura y pantallas.
+    - Se aplicó solo el tema: los componentes siguen en estilo `new-york`, sin dependencias nuevas, y Montserrat se sirve desde el build.
+    - Los colores de estado y de la cinta de jornada se mantienen del mockup, porque el preset no los define.
+    - La interfaz se compactó: la escala base pasó al 93,75 % (15 px).
+    - El mockup sigue siendo la referencia de estructura y pantallas.

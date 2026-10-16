@@ -94,6 +94,14 @@ _Evitar_: razón, comentario
 
 ## Control
 
+**Política de monitoreo**:
+Documento versionado que explica qué se registra, qué no y los derechos del Empleado. Cada cambio se publica como una versión nueva.
+_Evitar_: términos y condiciones, reglamento, aviso legal
+
+**Consentimiento**:
+Aceptación registrada, por parte de un Empleado, de la versión vigente de la Política de monitoreo. Sin ella no se reciben datos de sus Equipos.
+_Evitar_: autorización, permiso, firma
+
 **Módulo**:
 Capacidad de registro que el Administrador enciende o apaga para toda la empresa: capturas periódicas, Vista en vivo, USB, impresión, Sitios.
 _Evitar_: feature, plugin
