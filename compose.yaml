@@ -1,0 +1,153 @@
+# Topología base, igual a producción (docs/SEGURIDAD.md):
+#   - red "backend" interna (sin salida a Internet) para postgres, valkey y garage;
+#   - red "frontend" solo para la app, que es lo único que ve el proxy;
+#   - ningún puerto publicado aquí. En local, compose.override.yaml publica los
+#     servicios de datos en 127.0.0.1 y deja la app detrás del perfil "app".
+#
+# Las variables se leen del .env de la raíz (el mismo de Laravel).
+
+name: monitoreo
+
+x-app: &app
+    build:
+        context: .
+        target: runtime
+    image: ${APP_IMAGE:-monitoreo-app:local}
+    env_file:
+        - path: .env
+          required: false
+    environment:
+        DB_HOST: postgres
+        DB_PORT: '5432'
+        REDIS_HOST: valkey
+        REDIS_PORT: '6379'
+        AWS_ENDPOINT: http://garage:3900
+    read_only: true
+    tmpfs:
+        - /tmp
+        - /config:uid=1000,gid=1000
+        - /data:uid=1000,gid=1000
+        - /app/storage/app:uid=1000,gid=1000
+        - /app/storage/framework/cache:uid=1000,gid=1000
+        - /app/storage/framework/sessions:uid=1000,gid=1000
+        - /app/storage/framework/views:uid=1000,gid=1000
+        - /app/storage/logs:uid=1000,gid=1000
+    cap_drop:
+        - ALL
+    security_opt:
+        - no-new-privileges:true
+    mem_limit: 512m
+    pids_limit: 256
+    restart: unless-stopped
+    depends_on:
+        postgres:
+            condition: service_healthy
+        valkey:
+            condition: service_healthy
+        garage:
+            condition: service_started
+    networks:
+        - backend
+
+services:
+    app:
+        <<: *app
+        expose:
+            - '8080'
+        networks:
+            - frontend
+            - backend
+
+    horizon:
+        <<: *app
+        command: ['php', 'artisan', 'horizon']
+        stop_grace_period: 60s
+
+    scheduler:
+        <<: *app
+        command: ['php', 'artisan', 'schedule:work']
+
+    # Reverb se agrega cuando se instale el paquete laravel/reverb (tickets 06/09):
+    # la versión publicada aún exige guzzlehttp/psr7 2.x y el proyecto usa Guzzle 8.
+    # reverb:
+    #   <<: *app
+    #   command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8081"]
+    #   expose:
+    #     - "8081"
+    #   networks:
+    #     - frontend
+    #     - backend
+
+    postgres:
+        image: postgres:18-trixie
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:?Define POSTGRES_SUPERUSER_PASSWORD en .env}
+            MONITOREO_DB: ${DB_DATABASE:?Define DB_DATABASE en .env}
+            MONITOREO_OWNER_USER: ${DB_OWNER_USERNAME:?Define DB_OWNER_USERNAME en .env}
+            MONITOREO_OWNER_PASSWORD: ${DB_OWNER_PASSWORD:?Define DB_OWNER_PASSWORD en .env}
+            MONITOREO_APP_USER: ${DB_USERNAME:?Define DB_USERNAME en .env}
+            MONITOREO_APP_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+        volumes:
+            - postgres-data:/var/lib/postgresql
+            - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U postgres -d $${MONITOREO_DB}']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        security_opt:
+            - no-new-privileges:true
+        restart: unless-stopped
+        networks:
+            - backend
+
+    valkey:
+        image: valkey/valkey:8.1.10-trixie
+        command:
+            - valkey-server
+            - --appendonly
+            - 'yes'
+            - --requirepass
+            - ${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env}
+        environment:
+            REDISCLI_AUTH: ${REDIS_PASSWORD}
+        volumes:
+            - valkey-data:/data
+        healthcheck:
+            test: ['CMD', 'valkey-cli', 'ping']
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        security_opt:
+            - no-new-privileges:true
+        restart: unless-stopped
+        networks:
+            - backend
+
+    garage:
+        image: dxflrs/garage:v2.4.1
+        command: ['/garage', 'server', '--single-node', '--default-bucket']
+        environment:
+            GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:?Define GARAGE_RPC_SECRET en .env}
+            GARAGE_DEFAULT_ACCESS_KEY: ${AWS_ACCESS_KEY_ID:?Define AWS_ACCESS_KEY_ID en .env}
+            GARAGE_DEFAULT_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY:?Define AWS_SECRET_ACCESS_KEY en .env}
+            GARAGE_DEFAULT_BUCKET: ${AWS_BUCKET:?Define AWS_BUCKET en .env}
+        volumes:
+            - ./docker/garage/garage.toml:/etc/garage.toml:ro
+            - garage-data:/var/lib/garage
+        security_opt:
+            - no-new-privileges:true
+        restart: unless-stopped
+        networks:
+            - backend
+
+networks:
+    frontend: {}
+    backend:
+        internal: true
+
+volumes:
+    postgres-data: {}
+    valkey-data: {}
+    garage-data: {}

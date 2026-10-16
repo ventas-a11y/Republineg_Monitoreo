@@ -1,0 +1,17 @@
+# Garage de un solo nodo (sin replicación). Solo accesible en la red interna
+# de Docker: ADR-0003, las imágenes entran y salen únicamente a través de Laravel.
+# El rpc_secret llega por la variable GARAGE_RPC_SECRET; el bucket y la clave
+# por defecto, por GARAGE_DEFAULT_* (modo --single-node --default-bucket).
+
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+db_engine = "sqlite"
+
+replication_factor = 1
+
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"

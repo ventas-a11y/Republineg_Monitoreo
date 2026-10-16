@@ -1,0 +1,41 @@
+# Solo desarrollo local; docker compose lo carga automáticamente junto a compose.yaml.
+# En producción se usa únicamente compose.yaml (docker compose -f compose.yaml).
+#
+#   docker compose up -d                  -> postgres, valkey y garage en 127.0.0.1;
+#                                            la app corre en tu PHP con `composer run dev`.
+#   docker compose --profile app up -d    -> además app, horizon y scheduler con la
+#                                            imagen FrankenPHP (http://127.0.0.1:8080).
+
+services:
+    postgres:
+        ports:
+            - '127.0.0.1:5432:5432'
+        networks:
+            - devhost
+
+    valkey:
+        ports:
+            - '127.0.0.1:6379:6379'
+        networks:
+            - devhost
+
+    garage:
+        ports:
+            - '127.0.0.1:3900:3900'
+        networks:
+            - devhost
+
+    app:
+        profiles: ['app']
+        ports:
+            - '127.0.0.1:8080:8080'
+
+    horizon:
+        profiles: ['app']
+
+    scheduler:
+        profiles: ['app']
+
+networks:
+    # Red no interna: hace falta para que Docker pueda publicar los puertos locales.
+    devhost: {}
