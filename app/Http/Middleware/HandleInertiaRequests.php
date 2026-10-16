@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Area;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,11 +37,23 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
+                'can' => [
+                    'viewMonitoring' => $user?->can('viewMonitoring') ?? false,
+                    'manageAccounts' => $user?->can('viewAny', User::class) ?? false,
+                    'manageAreas' => $user?->can('viewAny', Area::class) ?? false,
+                ],
+            ],
+            'sessionTimeout' => $user === null ? null : [
+                'idleMinutes' => (int) config('session.lifetime'),
+                'absoluteExpiresAt' => (int) $request->session()->get(EnforceAbsoluteSessionTimeout::STARTED_AT_KEY)
+                    + (int) config('session.absolute_lifetime') * 60,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
