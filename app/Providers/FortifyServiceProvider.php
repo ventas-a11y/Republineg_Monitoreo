@@ -2,26 +2,36 @@
 
 namespace App\Providers;
 
-use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Http\Responses\IndistinguishablePasswordResetLinkResponse;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Support\Timebox;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\FailedPasswordResetLinkRequestResponse;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
 {
     /**
+     * Minimum duration of a login attempt, so response time does not reveal
+     * whether an account exists (same idea as Laravel's SessionGuard).
+     */
+    private const int LOGIN_TIMEBOX_MICROSECONDS = 300_000;
+
+    /**
      * Register any application services.
      */
     public function register(): void
     {
-        //
+        $this->app->bind(FailedPasswordResetLinkRequestResponse::class, IndistinguishablePasswordResetLinkResponse::class);
     }
 
     /**
@@ -40,7 +50,35 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureActions(): void
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
-        Fortify::createUsersUsing(CreateNewUser::class);
+
+        Fortify::authenticateUsing(fn (Request $request): ?User => (new Timebox)->call(
+            fn (): ?User => $this->authenticate($request),
+            self::LOGIN_TIMEBOX_MICROSECONDS,
+        ));
+    }
+
+    /**
+     * Resolve the user for a login attempt, or null for any kind of failure so
+     * that every failure gets the same message (including an expired temporary
+     * password from an invitation).
+     */
+    private function authenticate(Request $request): ?User
+    {
+        $password = $request->string('password')->toString();
+
+        $user = User::query()
+            ->where('email', $request->string(Fortify::username())->toString())
+            ->first();
+
+        if ($user === null || ! Hash::check($password, $user->password) || $user->hasExpiredTemporaryPassword()) {
+            return null;
+        }
+
+        if (Hash::needsRehash($user->password)) {
+            $user->forceFill(['password' => $password])->save();
+        }
+
+        return $user;
     }
 
     /**
@@ -67,10 +105,6 @@ class FortifyServiceProvider extends ServiceProvider
             'status' => $request->session()->get('status'),
         ]));
 
-        Fortify::registerView(fn () => Inertia::render('auth/register', [
-            'passwordRules' => Password::defaults()->toPasswordRulesString(),
-        ]));
-
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/two-factor-challenge'));
 
         Fortify::confirmPasswordView(fn () => Inertia::render('auth/confirm-password'));
@@ -86,9 +120,13 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
+            $account = Str::transliterate(Str::lower($request->string(Fortify::username())->toString()));
 
-            return Limit::perMinute(5)->by($throttleKey);
+            return [
+                Limit::perMinute(5)->by($account.'|'.$request->ip()),
+                // Per account as well, so rotating IPs does not bypass the limit.
+                Limit::perMinute(10)->by('account|'.$account),
+            ];
         });
 
         RateLimiter::for('passkeys', function (Request $request) {

@@ -160,8 +160,8 @@ return [
     |
     */
 
+    // No public registration: accounts are created by an Administrador (ticket 02).
     'features' => [
-        Features::registration(),
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
