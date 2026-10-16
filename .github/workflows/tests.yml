@@ -1,0 +1,70 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18-trixie
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: monitoreo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    # Las pruebas corren contra PostgreSQL (phpunit.xml no pisa estas variables).
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: monitoreo_test
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_OWNER_USERNAME: postgres
+      DB_OWNER_PASSWORD: postgres
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+
+      - name: Setup Vite+ (Node 24 + pnpm)
+        uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version: '24'
+          cache: true
+
+      - name: Setup Application
+        run: composer setup
+
+      - name: Audit Dependencies
+        run: |
+          composer audit
+          pnpm audit --audit-level moderate
+
+      - name: Run CI Checks
+        run: composer ci:check
