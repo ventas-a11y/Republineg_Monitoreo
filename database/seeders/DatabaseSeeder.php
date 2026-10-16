@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\Area;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -12,14 +12,14 @@ class DatabaseSeeder extends Seeder
 
     /**
      * Seed the application's database.
+     *
+     * Only Áreas: accounts are created by an Administrador, and the first
+     * Administrador with `php artisan monitoreo:crear-administrador`.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        foreach (['Contabilidad', 'Gerencia', 'RR. HH.', 'Soporte', 'Ventas'] as $name) {
+            Area::firstOrCreate(['name' => $name]);
+        }
     }
 }
