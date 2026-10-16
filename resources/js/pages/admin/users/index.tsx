@@ -1,6 +1,11 @@
 import { Head, Link } from '@inertiajs/react';
-import { Plus, Users } from 'lucide-react';
+import { createColumnHelper } from '@tanstack/react-table';
+import { Pencil, Plus, Users } from 'lucide-react';
+import { DataTableColumnHeader } from '@/components/data-table/column-header';
+import { DataTable } from '@/components/data-table/data-table';
+import type { DataTableFeatures } from '@/components/data-table/features';
 import Heading from '@/components/heading';
+import { IconAction } from '@/components/icon-action';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,14 +15,6 @@ import {
     EmptyMedia,
     EmptyTitle,
 } from '@/components/ui/empty';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { create, edit, index } from '@/routes/admin/users';
 import type { Role } from '@/types';
 
@@ -33,21 +30,82 @@ type UserRow = {
     invitation_expired: boolean;
 };
 
-function AccessStatus({ user }: { user: UserRow }) {
+type AccessState = {
+    label: string;
+    variant: 'destructive' | 'outline' | 'secondary';
+};
+
+function accessState(user: UserRow): AccessState {
     if (user.invitation_expired) {
-        return <Badge variant="destructive">Invitación vencida</Badge>;
+        return { label: 'Invitación vencida', variant: 'destructive' };
     }
 
     if (user.invitation_pending) {
-        return <Badge variant="outline">Invitación pendiente</Badge>;
+        return { label: 'Invitación pendiente', variant: 'outline' };
     }
 
     if (!user.has_second_factor) {
-        return <Badge variant="outline">Sin segundo factor</Badge>;
+        return { label: 'Sin segundo factor', variant: 'outline' };
     }
 
-    return <Badge variant="secondary">Activa</Badge>;
+    return { label: 'Activa', variant: 'secondary' };
 }
+
+const columnHelper = createColumnHelper<DataTableFeatures, UserRow>();
+
+const columns = columnHelper.columns([
+    columnHelper.accessor((user) => `${user.name} ${user.email}`, {
+        id: 'person',
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Persona" />
+        ),
+        cell: ({ row }) => (
+            <div className="min-w-48 break-words whitespace-normal">
+                <div className="font-medium">{row.original.name}</div>
+                <div className="text-muted-foreground" translate="no">
+                    {row.original.email}
+                </div>
+            </div>
+        ),
+    }),
+    columnHelper.accessor('role_label', {
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Rol" />
+        ),
+    }),
+    columnHelper.accessor((user) => user.areas.join(', '), {
+        id: 'areas',
+        header: 'Áreas',
+        enableSorting: false,
+        cell: ({ getValue }) => (
+            <span className="whitespace-normal">{getValue() || '—'}</span>
+        ),
+    }),
+    columnHelper.accessor((user) => accessState(user).label, {
+        id: 'access',
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Acceso" />
+        ),
+        cell: ({ row }) => {
+            const state = accessState(row.original);
+
+            return <Badge variant={state.variant}>{state.label}</Badge>;
+        },
+    }),
+    columnHelper.display({
+        id: 'actions',
+        header: () => <span className="sr-only">Acciones</span>,
+        cell: ({ row }) => (
+            <div className="flex justify-end">
+                <IconAction
+                    label={`Editar la cuenta de ${row.original.name}`}
+                    icon={Pencil}
+                    href={edit(row.original.id)}
+                />
+            </div>
+        ),
+    }),
+]);
 
 export default function UsersIndex({ users }: { users: UserRow[] }) {
     return (
@@ -68,85 +126,24 @@ export default function UsersIndex({ users }: { users: UserRow[] }) {
                     </Button>
                 </div>
 
-                {users.length === 0 ? (
-                    <Empty className="border">
-                        <EmptyHeader>
-                            <EmptyMedia variant="icon">
-                                <Users aria-hidden="true" />
-                            </EmptyMedia>
-                            <EmptyTitle>Todavía no hay cuentas</EmptyTitle>
-                            <EmptyDescription>
-                                Crea la primera con «Nueva cuenta».
-                            </EmptyDescription>
-                        </EmptyHeader>
-                    </Empty>
-                ) : (
-                    <div className="rounded-lg border">
-                        <Table>
-                            <TableHeader className="bg-muted/50">
-                                <TableRow>
-                                    <TableHead className="px-4">
-                                        Persona
-                                    </TableHead>
-                                    <TableHead className="px-4">Rol</TableHead>
-                                    <TableHead className="px-4">
-                                        Áreas
-                                    </TableHead>
-                                    <TableHead className="px-4">
-                                        Acceso
-                                    </TableHead>
-                                    <TableHead className="px-4">
-                                        <span className="sr-only">
-                                            Acciones
-                                        </span>
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {users.map((user) => (
-                                    <TableRow key={user.id}>
-                                        <TableCell className="px-4 py-3 break-words whitespace-normal">
-                                            <div className="font-medium">
-                                                {user.name}
-                                            </div>
-                                            <div
-                                                className="text-muted-foreground"
-                                                translate="no"
-                                            >
-                                                {user.email}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3">
-                                            {user.role_label}
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3 whitespace-normal">
-                                            {user.areas.length > 0
-                                                ? user.areas.join(', ')
-                                                : '—'}
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3">
-                                            <AccessStatus user={user} />
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3 text-right">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={edit(user.id)}
-                                                    aria-label={`Editar la cuenta de ${user.name}`}
-                                                >
-                                                    Editar
-                                                </Link>
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
+                <DataTable
+                    columns={columns}
+                    data={users}
+                    searchPlaceholder="Buscar por nombre, correo, rol, Área o estado…"
+                    empty={
+                        <Empty className="border">
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <Users aria-hidden="true" />
+                                </EmptyMedia>
+                                <EmptyTitle>Todavía no hay cuentas</EmptyTitle>
+                                <EmptyDescription>
+                                    Crea la primera con «Nueva cuenta».
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
+                    }
+                />
             </div>
         </>
     );

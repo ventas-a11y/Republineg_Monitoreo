@@ -1,7 +1,12 @@
-import { Form, Head, Link } from '@inertiajs/react';
-import { Building2 } from 'lucide-react';
+import { Form, Head } from '@inertiajs/react';
+import { createColumnHelper } from '@tanstack/react-table';
+import { Building2, Pencil } from 'lucide-react';
 import AreaController from '@/actions/App/Http/Controllers/Admin/AreaController';
+import { DataTableColumnHeader } from '@/components/data-table/column-header';
+import { DataTable } from '@/components/data-table/data-table';
+import type { DataTableFeatures } from '@/components/data-table/features';
 import Heading from '@/components/heading';
+import { IconAction } from '@/components/icon-action';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,14 +19,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
 import { edit, index } from '@/routes/admin/areas';
 
 type AreaRow = {
@@ -30,6 +27,50 @@ type AreaRow = {
     employees_count: number;
     reviewers_count: number;
 };
+
+const columnHelper = createColumnHelper<DataTableFeatures, AreaRow>();
+
+const columns = columnHelper.columns([
+    columnHelper.accessor('name', {
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Área" />
+        ),
+        cell: ({ getValue }) => (
+            <span className="font-medium break-words whitespace-normal">
+                {getValue()}
+            </span>
+        ),
+    }),
+    columnHelper.accessor('employees_count', {
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Empleados" />
+        ),
+        cell: ({ getValue }) => (
+            <span className="tabular-nums">{getValue()}</span>
+        ),
+    }),
+    columnHelper.accessor('reviewers_count', {
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Revisores" />
+        ),
+        cell: ({ getValue }) => (
+            <span className="tabular-nums">{getValue()}</span>
+        ),
+    }),
+    columnHelper.display({
+        id: 'actions',
+        header: () => <span className="sr-only">Acciones</span>,
+        cell: ({ row }) => (
+            <div className="flex justify-end">
+                <IconAction
+                    label={`Renombrar el Área ${row.original.name}`}
+                    icon={Pencil}
+                    href={edit(row.original.id)}
+                />
+            </div>
+        ),
+    }),
+]);
 
 export default function AreasIndex({ areas }: { areas: AreaRow[] }) {
     return (
@@ -72,69 +113,29 @@ export default function AreasIndex({ areas }: { areas: AreaRow[] }) {
                     )}
                 </Form>
 
-                {areas.length === 0 ? (
-                    <Empty className="max-w-3xl border">
-                        <EmptyHeader>
-                            <EmptyMedia variant="icon">
-                                <Building2 aria-hidden="true" />
-                            </EmptyMedia>
-                            <EmptyTitle>Todavía no hay Áreas</EmptyTitle>
-                            <EmptyDescription>
-                                Crea la primera con el formulario de arriba.
-                            </EmptyDescription>
-                        </EmptyHeader>
-                    </Empty>
-                ) : (
-                    <div className="max-w-3xl rounded-lg border">
-                        <Table>
-                            <TableHeader className="bg-muted/50">
-                                <TableRow>
-                                    <TableHead className="px-4">Área</TableHead>
-                                    <TableHead className="px-4">
-                                        Empleados
-                                    </TableHead>
-                                    <TableHead className="px-4">
-                                        Revisores
-                                    </TableHead>
-                                    <TableHead className="px-4">
-                                        <span className="sr-only">
-                                            Acciones
-                                        </span>
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {areas.map((area) => (
-                                    <TableRow key={area.id}>
-                                        <TableCell className="px-4 py-3 font-medium break-words whitespace-normal">
-                                            {area.name}
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3 tabular-nums">
-                                            {area.employees_count}
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3 tabular-nums">
-                                            {area.reviewers_count}
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3 text-right">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={edit(area.id)}
-                                                    aria-label={`Renombrar el Área ${area.name}`}
-                                                >
-                                                    Renombrar
-                                                </Link>
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
+                <div className="max-w-3xl">
+                    <DataTable
+                        columns={columns}
+                        data={areas}
+                        searchPlaceholder="Buscar Área…"
+                        empty={
+                            <Empty className="border">
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <Building2 aria-hidden="true" />
+                                    </EmptyMedia>
+                                    <EmptyTitle>
+                                        Todavía no hay Áreas
+                                    </EmptyTitle>
+                                    <EmptyDescription>
+                                        Crea la primera con el formulario de
+                                        arriba.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
+                        }
+                    />
+                </div>
             </div>
         </>
     );
