@@ -65,12 +65,19 @@ Herramienta interna de Intelicorp para monitorear de forma transparente sus 25�
 | Legal               | `legal:compliance-check` (política LOPDP)                                                              |
 | Flujo de trabajo    | `to-spec`, `to-tickets`, `tdd`, `diagnosing-bugs`, `codebase-design`, `domain-modeling`                |
 
-**Externas a instalar en la Fase 0.** [vercel-labs/skills](https://github.com/vercel-labs/skills) es el CLI instalador (`npx skills add`); las skills de Vercel están en [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills).
+**Externas.** [vercel-labs/skills](https://github.com/vercel-labs/skills) es el CLI instalador (`npx skills add`); las skills de Vercel están en [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills).
+
+Instaladas el 2026-10-16 con el CLI fijado en `skills@1.7.0`. Las versiones quedan registradas en `skills-lock.json`. Los archivos van a `.claude/skills/`, que no se versiona, así que cada desarrollador las instala en su máquina:
 
 ```bash
-npx skills add vercel-labs/agent-skills -l    # confirmar los nombres exactos
-npx skills add vercel-labs/agent-skills -a claude-code -s web-design-guidelines composition-patterns
-npx skills add supabase/agent-skills -a claude-code -s supabase-postgres-best-practices   # solo la parte Postgres genérica
+npx skills@1.7.0 add vercel-labs/agent-skills -a claude-code --copy -y \
+  -s web-design-guidelines vercel-react-best-practices vercel-composition-patterns
+```
+
+Pendiente:
+
+```bash
+npx skills@1.7.0 add supabase/agent-skills -a claude-code -s supabase-postgres-best-practices   # solo la parte Postgres genérica
 ```
 
 ```
