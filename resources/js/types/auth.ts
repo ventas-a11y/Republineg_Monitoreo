@@ -19,6 +19,7 @@ export type Auth = {
         viewMonitoring: boolean;
         manageAccounts: boolean;
         manageAreas: boolean;
+        manageMonitoringPolicy: boolean;
     };
 };
 

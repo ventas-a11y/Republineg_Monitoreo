@@ -7,6 +7,7 @@ import {
     FileText,
     LayoutGrid,
     Monitor,
+    ScrollText,
     ShieldCheck,
     Users,
 } from 'lucide-react';
@@ -31,10 +32,12 @@ import {
 import { dashboard } from '@/routes';
 import { apps, timeline } from '@/routes/activity';
 import { index as adminAreas } from '@/routes/admin/areas';
+import { index as adminMonitoringPolicy } from '@/routes/admin/monitoring-policy';
 import { index as adminUsers } from '@/routes/admin/users';
 import { index as alerts } from '@/routes/alerts';
 import { index as captures } from '@/routes/captures';
 import { index as devices } from '@/routes/devices';
+import { show as monitoringPolicy } from '@/routes/monitoring-policy';
 import { index as reports } from '@/routes/reports';
 import type { NavItem } from '@/types';
 
@@ -54,7 +57,13 @@ function TransparencyNotice() {
                 </CardTitle>
                 <CardDescription className="text-xs leading-relaxed">
                     Cada persona ve su propia actividad y recibe un aviso antes
-                    de cada Captura.
+                    de cada Captura.{' '}
+                    <Link
+                        href={monitoringPolicy()}
+                        className="text-foreground underline underline-offset-4 hover:text-primary"
+                    >
+                        Ver la política
+                    </Link>
                 </CardDescription>
             </CardHeader>
         </Card>
@@ -91,6 +100,15 @@ export function AppSidebar() {
             : []),
         ...(auth.can.manageAreas
             ? [{ title: 'Áreas', href: adminAreas(), icon: Building2 }]
+            : []),
+        ...(auth.can.manageMonitoringPolicy
+            ? [
+                  {
+                      title: 'Política de monitoreo',
+                      href: adminMonitoringPolicy(),
+                      icon: ScrollText,
+                  },
+              ]
             : []),
     ];
 

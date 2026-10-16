@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Area;
+use App\Models\MonitoringPolicy;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -48,6 +49,7 @@ class HandleInertiaRequests extends Middleware
                     'viewMonitoring' => $user?->can('viewMonitoring') ?? false,
                     'manageAccounts' => $user?->can('viewAny', User::class) ?? false,
                     'manageAreas' => $user?->can('viewAny', Area::class) ?? false,
+                    'manageMonitoringPolicy' => $user?->can('viewAny', MonitoringPolicy::class) ?? false,
                 ],
             ],
             'sessionTimeout' => $user === null ? null : [

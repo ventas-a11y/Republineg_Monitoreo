@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin\AreaController;
+use App\Http\Controllers\Admin\MonitoringPolicyController;
 use App\Http\Controllers\Admin\UserController;
 use App\Models\Area;
+use App\Models\MonitoringPolicy;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -32,4 +34,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         ->middleware('can:update,area')->name('areas.edit');
     Route::put('areas/{area}', [AreaController::class, 'update'])
         ->middleware('can:update,area')->name('areas.update');
+
+    Route::get('politica', [MonitoringPolicyController::class, 'index'])
+        ->middleware('can:viewAny,'.MonitoringPolicy::class)->name('monitoring-policy.index');
+    Route::post('politica', [MonitoringPolicyController::class, 'store'])
+        ->middleware('can:create,'.MonitoringPolicy::class)->name('monitoring-policy.store');
 })->whereUlid(['user', 'area']);
